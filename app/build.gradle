@@ -34,4 +34,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile files('libs/AMap_Search_V3.6.0_20161111.jar')
     compile files('libs/Android_Map3D_SDK_V4.1.2_20161104.jar')
+    compile files('libs/AMap_Location_V3.1.0_20161027.jar')
 }
