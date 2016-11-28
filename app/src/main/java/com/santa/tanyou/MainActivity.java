@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -18,6 +20,7 @@ import com.amap.api.maps.MapView;
 
 
 public class MainActivity extends Activity implements LocationSource, AMapLocationListener {
+    private MyView fog;
     private AMap aMap;
     private MapView mapView;
     private OnLocationChangedListener mListener;
@@ -31,6 +34,9 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //fog
+        fog = (MyView) findViewById(R.id.myView);
+        fog.setAlpha((float) 0.85);
         //获取地图控件引用
         mapView = (MapView) findViewById(R.id.map);
         //在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，实现地图生命周期管理

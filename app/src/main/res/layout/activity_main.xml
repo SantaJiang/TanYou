@@ -11,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
+
     <TextView
         android:id="@+id/location_errInfo_text"
         android:layout_width="match_parent"
@@ -32,5 +33,11 @@
         android:textOff="普通地图"
         android:textOn="卫星地图"
         android:checked="false"/>
+
+        <com.santa.tanyou.MyView
+            android:id="@+id/myView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
 
 </FrameLayout>
