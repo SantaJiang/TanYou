@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -32,6 +33,7 @@ import com.amap.api.maps.MapView;
 
 public class MainActivity extends Activity implements LocationSource, AMapLocationListener {
     private FrameLayout act_main;
+    private Button btn;
 
     private int SCREEN_W;
 
@@ -49,10 +51,16 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //Fog
-        act_main = (FrameLayout) findViewById(R.id.activity_main);
-        MyView myView = new MyView(this);
-        act_main.addView(myView);
+        btn = (Button) findViewById(R.id.Fog_btn);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Fog
+                act_main = (FrameLayout) findViewById(R.id.activity_main);
+                MyView myView = new MyView(MainActivity.this);
+                act_main.addView(myView);
+            }
+        });
         //获取地图控件引用
         mapView = (MapView) findViewById(R.id.map);
         //在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，实现地图生命周期管理

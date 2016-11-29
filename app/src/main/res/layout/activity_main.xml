@@ -34,6 +34,13 @@
         android:textOn="卫星地图"
         android:checked="false"/>
 
+    <Button
+        android:id="@+id/Fog_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="迷雾模式"
+        android:layout_gravity="bottom"/>
+
 
 
 
