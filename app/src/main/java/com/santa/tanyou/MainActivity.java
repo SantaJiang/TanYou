@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -24,6 +25,7 @@ import com.amap.api.location.AMapLocationClient;//定位服务类
 import com.amap.api.location.AMapLocationClientOption;//定位参数设置（在定位服务时需要这些参数）
 import com.amap.api.location.AMapLocationListener;//定位回调接口
 import com.amap.api.maps.AMap;
+import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
 
@@ -82,15 +84,19 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         mLocationErrText.setVisibility(View.GONE);
     }
 
-    /**
-     * 设置一些amap的属性
+    /*
+    设置一些amap的属性
      */
     private void setUpMap() {
         aMap.setLocationSource(this);// 设置定位监听
-        aMap.getUiSettings().setMyLocationButtonEnabled(true);// 设置默认定位按钮是否显示
+        aMap.getUiSettings().setMyLocationButtonEnabled(false);// 设置默认定位按钮是否显示
+        aMap.getUiSettings().setScaleControlsEnabled(true);//显示比例尺控件
+        aMap.moveCamera(CameraUpdateFactory.zoomTo(15));//设置比例尺，3-19
         aMap.setMyLocationEnabled(true);// 设置为true表示显示定位层并可触发定位，false表示隐藏定位层并不可触发定位，默认是false
         // 设置定位的类型为定位模式 ，可以由定位、跟随或地图根据面向方向旋转几种
-        aMap.setMyLocationType(AMap.LOCATION_TYPE_MAP_FOLLOW);//定位模式
+        //aMap.setMyLocationType(AMap.LOCATION_TYPE_MAP_FOLLOW);//跟随模式
+        aMap.setMyLocationType(AMap.LOCATION_TYPE_LOCATE); //定位模式
+        //aMap.setMyLocationType(AMap.LOCATION_TYPE_MAP_ROTATE); // 设置定位的类型为根据地图面向方向旋转
     }
 
 
@@ -117,8 +123,8 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         mapView.onPause();
     }
 
-    /**
-     * 定位成功后回调函数
+    /*
+    定位成功后回调函数
      */
     @Override
     public void onLocationChanged(AMapLocation amapLocation) {
@@ -131,12 +137,30 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 Log.e("AmapErr", errText);
                 mLocationErrText.setVisibility(View.VISIBLE);
                 mLocationErrText.setText(errText);
+                //amapLocation.getLocationType();//获取当前定位结果来源，如网络定位结果，详见定位类型表
+                //amapLocation.getLatitude();//获取纬度
+                //amapLocation.getLongitude();//获取经度
+                //amapLocation.getAccuracy();//获取精度信息
+                //amapLocation.getAddress();//地址，如果option中设置isNeedAddress为false，则没有此结果，网络定位结果中会有地址信息，GPS定位不返回地址信息。
+                //amapLocation.getCountry();//国家信息
+                //amapLocation.getProvince();//省信息
+                //amapLocation.getCity();//城市信息
+                //amapLocation.getDistrict();//城区信息
+                //amapLocation.getStreet();//街道信息
+                //amapLocation.getStreetNum();//街道门牌号信息
+                //amapLocation.getCityCode();//城市编码
+                //amapLocation.getAdCode();//地区编码
+                //amapLocation.getAoiName();//获取当前定位点的AOI信息
+                //amapLocation.getGpsStatus();//获取GPS的当前状态
+
+                double x = amapLocation.getLatitude();//获取纬度数据
+                double y = amapLocation.getLongitude();//获取经度数据
             }
         }
     }
 
-    /**
-     * 激活定位
+    /*
+    激活定位
      */
     @Override
     public void activate(OnLocationChangedListener listener) {
@@ -158,8 +182,8 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         }
     }
 
-    /**
-     * 停止定位
+    /*
+    停止定位
      */
     @Override
     public void deactivate() {
@@ -171,7 +195,6 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         mlocationClient = null;
     }
 
-
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -180,12 +203,12 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     }
 
 
-    //Fog
+    //实现战争迷雾部分代码
     class MyView extends View {
         private Bitmap mBitmap;
         private Canvas mCanvas;
         private Paint mPaint;
-        private Path  mPath;
+        private Path mPath;
         private float mX, mY;
         private static final float TOUCH_TOLERANCE = 4;
 
@@ -196,14 +219,14 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             setScreenWH();
             setBackGround();
 
-            // 1.if cover is a image,you can open MENU_ITEM_COMMENT bellow
+            // 1.如果覆盖物为图像,你可以调用如下方法
             //Bitmap bm = createBitmapFromSRC();
-            // if you want to set cover image's alpha,you can open MENU_ITEM_COMMENT bellow
+            // 如果想设置图像的透明度,可以调用如下方法
             //bm = setBitmapAlpha(bm, 100);
-            // if you want to scale cover image,you can open MENU_ITEM_COMMENT bellow
+            // 如果想限制图像的范围，可以调用如下方法
             //bm = scaleBitmapFillScreen(bm);
 
-            // 2.if cover is color
+            // 2.如果覆盖层是纯色
             Bitmap bm = createBitmapFromARGB(0xFF000000, SCREEN_W, SCREEN_H);
             bm = setBitmapAlpha(bm, 100);
             setCoverBitmap(bm);
@@ -211,12 +234,12 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         }
 
         private void setScreenWH() {
-            // get screen info
+            // 得到屏幕信息
             DisplayMetrics dm = new DisplayMetrics();
             dm = this.getResources().getDisplayMetrics();
-            // get screen width
+            // 得到屏幕宽度
             int screenWidth = dm.widthPixels;
-            // get screen height
+            // 得到屏幕高度
             int screenHeight = dm.heightPixels;
 
             SCREEN_W = screenWidth;
@@ -229,12 +252,10 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         }
 
 
-        /**
-         *
+        /*
          * @param colorARGB should like 0x8800ff00
          * @param width
          * @param height
-         * @return
          */
         private Bitmap createBitmapFromARGB(int colorARGB, int width, int height) {
             int[] argb = new int[width * height];
@@ -247,12 +268,10 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             return Bitmap.createBitmap(argb, width, height, Config.ARGB_8888);
         }
 
-        /**
-         *
-         * @param bm
+        /*
+        * @param bm
          * @param alpha ,and alpha should be like ox00000000-oxff000000
          * @note set bitmap's alpha
-         * @return
          */
        /* private Bitmap setBitmapAlpha(Bitmap bm, int alpha) {
             int[] argb = new int[bm.getWidth() * bm.getHeight()];
@@ -268,12 +287,10 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                                        Config.ARGB_8888);
         }*/
 
-        /**
-         *
+        /*
          * @param bm
-         * @param alpha ,alpha should be between 0 and 255
-         * @note set bitmap's alpha
-         * @return
+         * @param alpha ,图像透明度应该在0-255之间
+         * @note 设置位图的透明度
          */
         private Bitmap setBitmapAlpha(Bitmap bm, int alpha) {
             int[] argb = new int[bm.getWidth() * bm.getHeight()];
@@ -288,18 +305,15 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                     Config.ARGB_8888);
         }
 
-        /**
-         *
+        /*
          * @param bm
          * @note if bitmap is smaller than screen, you can scale it fill the screen.
-         * @return
          */
         private Bitmap scaleBitmapFillScreen(Bitmap bm) {
             return Bitmap.createScaledBitmap(bm, SCREEN_W, SCREEN_H, true);
         }
 
-        /**
-         *
+        /*
          * @param bm
          * @note set cover bitmap , which  overlay on background.
          */
@@ -317,7 +331,8 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             mPaint.setStrokeWidth(20);
 
             //set path
-            mPath =  new Path();;
+            mPath = new Path();
+            ;
 
             // converting bitmap into mutable bitmap
             mBitmap = Bitmap.createBitmap(SCREEN_W, SCREEN_H, Config.ARGB_8888);
@@ -327,7 +342,6 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             // be sure parameter is bm, not mBitmap
             mCanvas.drawBitmap(bm, 0, 0, null);
         }
-
 
 
         @Override
@@ -343,15 +357,17 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             mX = x;
             mY = y;
         }
+
         private void touch_move(float x, float y) {
             float dx = Math.abs(x - mX);
             float dy = Math.abs(y - mY);
             if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                mPath.quadTo(mX, mY, (x + mX)/2, (y + mY)/2);
+                mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
                 mX = x;
                 mY = y;
             }
         }
+
         private void touch_up() {
             mPath.lineTo(mX, mY);
             // commit the path to our offscreen
