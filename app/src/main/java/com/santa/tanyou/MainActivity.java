@@ -1,25 +1,16 @@
 package com.santa.tanyou;
 
 import android.app.Activity;
+import android.graphics.Point;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Bitmap.Config;
-import android.util.DisplayMetrics;
-import android.view.MotionEvent;
 
 import com.amap.api.location.AMapLocation;//定位信息类
 import com.amap.api.location.AMapLocationClient;//定位服务类
@@ -29,21 +20,24 @@ import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
+import com.amap.api.maps.Projection;
+import com.amap.api.maps.model.LatLng;
 
 
 public class MainActivity extends Activity implements LocationSource, AMapLocationListener {
+    private int i = 0;
+    private MyView myView;
+    private double x;
+    private double y;
+    private float dot_x = 0;
+    private float dot_y = 0;
     private FrameLayout act_main;
     private Button btn;
-
-    private int SCREEN_W;
-
-    private int SCREEN_H;
     private AMap aMap;
     private MapView mapView;
     private OnLocationChangedListener mListener;
     private AMapLocationClient mlocationClient;
     private AMapLocationClientOption mLocationOption;
-
     private TextView mLocationErrText;
 
 
@@ -57,8 +51,10 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             public void onClick(View v) {
                 //Fog
                 act_main = (FrameLayout) findViewById(R.id.activity_main);
-                MyView myView = new MyView(MainActivity.this);
+                myView = new MyView(MainActivity.this);
                 act_main.addView(myView);
+                i = 0;//初始化计数器
+                aMap.getUiSettings().setAllGesturesEnabled(false);//禁止所有手势操作
             }
         });
         //获取地图控件引用
@@ -66,20 +62,9 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         //在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，实现地图生命周期管理
         mapView.onCreate(savedInstanceState);
         init();
-
-        ToggleButton tb = (ToggleButton) findViewById(R.id.tb);
-        tb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    //设置使用卫星地图
-                    aMap.setMapType(AMap.MAP_TYPE_SATELLITE);
-                } else {
-                    //设置使用普通地图
-                    aMap.setMapType(AMap.MAP_TYPE_NORMAL);
-                }
-            }
-        });
+        //设置使用普通地图
+        //aMap.setMapType(AMap.MAP_TYPE_NIGHT);//夜景地图模式
+        //aMap.setMapType(AMap.MAP_TYPE_NORMAL);
     }
 
     //初始化AMap对象
@@ -96,6 +81,8 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     设置一些amap的属性
      */
     private void setUpMap() {
+        aMap.getUiSettings().setRotateGesturesEnabled(false);//禁止地图旋转手势
+        aMap.getUiSettings().setTiltGesturesEnabled(false);//禁止倾斜手势
         aMap.setLocationSource(this);// 设置定位监听
         aMap.getUiSettings().setMyLocationButtonEnabled(false);// 设置默认定位按钮是否显示
         aMap.getUiSettings().setScaleControlsEnabled(true);//显示比例尺控件
@@ -135,16 +122,27 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     定位成功后回调函数
      */
     @Override
-    public void onLocationChanged(AMapLocation amapLocation) {
+    public void onLocationChanged(final AMapLocation amapLocation) {
         if (mListener != null && amapLocation != null) {
             if (amapLocation != null && amapLocation.getErrorCode() == 0) {
                 mLocationErrText.setVisibility(View.GONE);
                 mListener.onLocationChanged(amapLocation);// 显示系统小蓝点
-            } else {
-                String errText = "定位失败," + amapLocation.getErrorCode() + ": " + amapLocation.getErrorInfo();
-                Log.e("AmapErr", errText);
-                mLocationErrText.setVisibility(View.VISIBLE);
-                mLocationErrText.setText(errText);
+                x = amapLocation.getLatitude();//获取纬度
+                y = amapLocation.getLongitude();//获取经度
+                LatLng pos = new LatLng(x,y);
+                Projection projection = aMap.getProjection();
+                //将地图的点，转换为屏幕上的点 
+                Point dot = projection.toScreenLocation(pos);
+                dot_x = dot.x;
+                dot_y = dot.y;
+                if (i == 0){
+                    myView.start_pot(dot_x,dot_y);
+                } else{
+                    myView.line(dot_x, dot_y);
+                }
+                i++;
+                Toast.makeText(MainActivity.this, "dot_x:" + dot_x + ", dot_y:" + dot_y, Toast.LENGTH_SHORT).show();
+
                 //amapLocation.getLocationType();//获取当前定位结果来源，如网络定位结果，详见定位类型表
                 //amapLocation.getLatitude();//获取纬度
                 //amapLocation.getLongitude();//获取经度
@@ -161,11 +159,38 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 //amapLocation.getAoiName();//获取当前定位点的AOI信息
                 //amapLocation.getGpsStatus();//获取GPS的当前状态
 
-                double x = amapLocation.getLatitude();//获取纬度数据
-                double y = amapLocation.getLongitude();//获取经度数据
+            } else {
+                String errText = "定位失败," + amapLocation.getErrorCode() + ": " + amapLocation.getErrorInfo();
+                Log.e("AmapErr", errText);
+                mLocationErrText.setVisibility(View.VISIBLE);
+                mLocationErrText.setText(errText);
             }
         }
     }
+
+    /*private void adjustCamera(LatLng centerLatLng,int range){
+        //当前缩放级别下的比例尺 
+        //"每像素代表" + scale + "米"
+        float scale = aMap.getScalePerPixel();
+        //代表range（米）的像素数量 
+        int pixel = Math.round(range/scale);
+        //小范围，小缩放级别（比例尺较大），有精度损失 
+        Projection projection = aMap.getProjection();
+        //将地图的中心点，转换为屏幕上的点 
+        Point center = projection.toScreenLocation(centerLatLng);
+        //获取距离中心点为pixel像素的左、右两点（屏幕上的点 
+        Point right = new Point(center.x+pixel,center.y);
+        Point left = new Point(center.x-pixel,center.y);
+
+        //将屏幕上的点转换为地图上的点 
+        LatLng rightLatlng=projection.fromScreenLocation(right);
+        LatLng LeftLatlng = projection.fromScreenLocation(left);
+
+        LatLngBounds bounds = LatLngBounds.builder().include(rightLatlng).include(LeftLatlng).build();
+        //bounds.contains();
+
+        aMap.getMapScreenMarkers();
+    }*/
 
     /*
     激活定位
@@ -211,199 +236,5 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     }
 
 
-    //实现战争迷雾部分代码
-    class MyView extends View {
-        private Bitmap mBitmap;
-        private Canvas mCanvas;
-        private Paint mPaint;
-        private Path mPath;
-        private float mX, mY;
-        private static final float TOUCH_TOLERANCE = 4;
 
-
-        public MyView(Context context) {
-            super(context);
-            setFocusable(true);
-            setScreenWH();
-            setBackGround();
-
-            // 1.如果覆盖物为图像,你可以调用如下方法
-            //Bitmap bm = createBitmapFromSRC();
-            // 如果想设置图像的透明度,可以调用如下方法
-            //bm = setBitmapAlpha(bm, 100);
-            // 如果想限制图像的范围，可以调用如下方法
-            //bm = scaleBitmapFillScreen(bm);
-
-            // 2.如果覆盖层是纯色
-            Bitmap bm = createBitmapFromARGB(0xFF000000, SCREEN_W, SCREEN_H);
-            bm = setBitmapAlpha(bm, 100);
-            setCoverBitmap(bm);
-
-        }
-
-        private void setScreenWH() {
-            // 得到屏幕信息
-            DisplayMetrics dm = new DisplayMetrics();
-            dm = this.getResources().getDisplayMetrics();
-            // 得到屏幕宽度
-            int screenWidth = dm.widthPixels;
-            // 得到屏幕高度
-            int screenHeight = dm.heightPixels;
-
-            SCREEN_W = screenWidth;
-            SCREEN_H = screenHeight;
-        }
-
-
-        private void setBackGround() {
-            setBackgroundResource(R.drawable.transparent);
-        }
-
-
-        /*
-         * @param colorARGB should like 0x8800ff00
-         * @param width
-         * @param height
-         */
-        private Bitmap createBitmapFromARGB(int colorARGB, int width, int height) {
-            int[] argb = new int[width * height];
-
-            for (int i = 0; i < argb.length; i++) {
-
-                argb[i] = colorARGB;
-
-            }
-            return Bitmap.createBitmap(argb, width, height, Config.ARGB_8888);
-        }
-
-        /*
-        * @param bm
-         * @param alpha ,and alpha should be like ox00000000-oxff000000
-         * @note set bitmap's alpha
-         */
-       /* private Bitmap setBitmapAlpha(Bitmap bm, int alpha) {
-            int[] argb = new int[bm.getWidth() * bm.getHeight()];
-            bm.getPixels(argb, 0, bm.getWidth(), 0, 0, bm.getWidth(), bm
-                    .getHeight());
-
-
-            for (int i = 0; i < argb.length; i++) {
-
-                argb[i] = ((alpha) | (argb[i] & 0x00FFFFFF));
-            }
-            return Bitmap.createBitmap(argb, bm.getWidth(), bm.getHeight(),
-                                       Config.ARGB_8888);
-        }*/
-
-        /*
-         * @param bm
-         * @param alpha ,图像透明度应该在0-255之间
-         * @note 设置位图的透明度
-         */
-        private Bitmap setBitmapAlpha(Bitmap bm, int alpha) {
-            int[] argb = new int[bm.getWidth() * bm.getHeight()];
-            bm.getPixels(argb, 0, bm.getWidth(), 0, 0, bm.getWidth(), bm
-                    .getHeight());
-
-            for (int i = 0; i < argb.length; i++) {
-
-                argb[i] = ((alpha << 24) | (argb[i] & 0x00FFFFFF));
-            }
-            return Bitmap.createBitmap(argb, bm.getWidth(), bm.getHeight(),
-                    Config.ARGB_8888);
-        }
-
-        /*
-         * @param bm
-         * @note if bitmap is smaller than screen, you can scale it fill the screen.
-         */
-        private Bitmap scaleBitmapFillScreen(Bitmap bm) {
-            return Bitmap.createScaledBitmap(bm, SCREEN_W, SCREEN_H, true);
-        }
-
-        /*
-         * @param bm
-         * @note set cover bitmap , which  overlay on background.
-         */
-        private void setCoverBitmap(Bitmap bm) {
-            // setting paint
-            mPaint = new Paint();
-            mPaint.setAlpha(0);
-            mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-            mPaint.setAntiAlias(true);
-
-            mPaint.setDither(true);
-            mPaint.setStyle(Paint.Style.STROKE);
-            mPaint.setStrokeJoin(Paint.Join.ROUND);
-            mPaint.setStrokeCap(Paint.Cap.ROUND);
-            mPaint.setStrokeWidth(20);
-
-            //set path
-            mPath = new Path();
-            ;
-
-            // converting bitmap into mutable bitmap
-            mBitmap = Bitmap.createBitmap(SCREEN_W, SCREEN_H, Config.ARGB_8888);
-            mCanvas = new Canvas();
-            mCanvas.setBitmap(mBitmap);
-            // drawXY will result on that Bitmap
-            // be sure parameter is bm, not mBitmap
-            mCanvas.drawBitmap(bm, 0, 0, null);
-        }
-
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            canvas.drawBitmap(mBitmap, 0, 0, null);
-            mCanvas.drawPath(mPath, mPaint);
-            super.onDraw(canvas);
-        }
-
-        private void touch_start(float x, float y) {
-            mPath.reset();
-            mPath.moveTo(x, y);
-            mX = x;
-            mY = y;
-        }
-
-        private void touch_move(float x, float y) {
-            float dx = Math.abs(x - mX);
-            float dy = Math.abs(y - mY);
-            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-                mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
-                mX = x;
-                mY = y;
-            }
-        }
-
-        private void touch_up() {
-            mPath.lineTo(mX, mY);
-            // commit the path to our offscreen
-            mCanvas.drawPath(mPath, mPaint);
-            // kill this so we don't double draw
-            mPath.reset();
-        }
-
-        @Override
-        public boolean onTouchEvent(MotionEvent event) {
-            float x = event.getX();
-            float y = event.getY();
-
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    touch_start(x, y);
-                    invalidate();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    touch_move(x, y);
-                    invalidate();
-                    break;
-                case MotionEvent.ACTION_UP:
-                    touch_up();
-                    invalidate();
-                    break;
-            }
-            return true;
-        }
-    }
 }
