@@ -28,6 +28,7 @@ class MyView extends View {
 
         // 1.如果覆盖物为图像,你可以调用如下方法
         //Bitmap bm = createBitmapFromSRC();
+
         // 2.如果覆盖层是纯色
         Bitmap bm = createBitmapFromARGB(0xFF000000, SCREEN_W, SCREEN_H);
         bm = setBitmapAlpha(bm, 100);  // 设置纯色图层的透明度
@@ -115,6 +116,8 @@ class MyView extends View {
         mPath.lineTo(x,y);
         mCanvas.drawPath(mPath, mPaint);
         mPath.moveTo(x, y);
+        //每次View组件上的图形状态数据发生改变时,都应该通知View组件重写调用onDraw(Canvas canvas)方法重绘该组件
+        //通知View重绘可调用invalidate(在UI线程中) 或 postInvalidate(在非UI线程中)
         invalidate();
     }
 }
