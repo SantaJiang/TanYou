@@ -10,8 +10,9 @@ import android.graphics.PorterDuffXfermode;
 import android.util.DisplayMetrics;
 import android.view.View;
 
+
 //实现战争迷雾部分代码
-class MyView extends View {
+public class MyView extends View {
     private int SCREEN_W;
     private int SCREEN_H;
     private Bitmap mBitmap;
@@ -24,6 +25,7 @@ class MyView extends View {
         super(context);
         //setFocusable(true);
         setScreenWH();
+        setting();
 
 
         // 1.如果覆盖物为图像,你可以调用如下方法
@@ -47,6 +49,29 @@ class MyView extends View {
 
         SCREEN_W = screenWidth;
         SCREEN_H = screenHeight;
+    }
+
+    private void setting(){
+        // setting paint
+        mPaint = new Paint();
+        mPaint.setAlpha(0);
+        mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+        mPaint.setAntiAlias(true);
+
+        mPaint.setDither(true);
+        mPaint.setStyle(Paint.Style.STROKE);
+        mPaint.setStrokeJoin(Paint.Join.ROUND);
+        mPaint.setStrokeCap(Paint.Cap.ROUND);
+        mPaint.setStrokeWidth(60);  //笔画宽度
+
+        //set path
+        mPath = new Path();
+
+
+        // converting bitmap into mutable bitmap
+        mBitmap = Bitmap.createBitmap(SCREEN_W, SCREEN_H, Bitmap.Config.ARGB_8888);
+        mCanvas = new Canvas();
+        mCanvas.setBitmap(mBitmap);
     }
 
     private Bitmap createBitmapFromARGB(int colorARGB, int width, int height) {
@@ -74,36 +99,14 @@ class MyView extends View {
     }
 
     private void setCoverBitmap(Bitmap bm) {
-        // setting paint
-        mPaint = new Paint();
-        mPaint.setAlpha(0);
-        mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-        mPaint.setAntiAlias(true);
-
-        mPaint.setDither(true);
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeJoin(Paint.Join.ROUND);
-        mPaint.setStrokeCap(Paint.Cap.ROUND);
-        mPaint.setStrokeWidth(30);  //笔画宽度
-
-        //set path
-        mPath = new Path();
-
-
-        // converting bitmap into mutable bitmap
-        mBitmap = Bitmap.createBitmap(SCREEN_W, SCREEN_H, Bitmap.Config.ARGB_8888);
-        mCanvas = new Canvas();
-        mCanvas.setBitmap(mBitmap);
         // drawXY will result on that Bitmap
         // be sure parameter is bm, not mBitmap
         mCanvas.drawBitmap(bm, 0, 0, null);
     }
 
-
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawBitmap(mBitmap, 0, 0, null);
-        //mCanvas.drawPath(mPath, mPaint);
         super.onDraw(canvas);
     }
 
@@ -121,3 +124,4 @@ class MyView extends View {
         invalidate();
     }
 }
+
