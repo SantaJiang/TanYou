@@ -29,7 +29,7 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.amap.api.v2.apikey"
-            android:value="895e2fcd5291dacdfe17adc167c0fc84" />
+            android:value="740476684937c159200b2d82c7886b5f" />
 
         <activity android:name=".MainActivity">
             <intent-filter>

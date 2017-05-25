@@ -1,6 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'fogofwar'
+            keyPassword 'jsd003581.'
+            storeFile file('D:/fogofwar.jks')
+            storePassword 'jsd003581.'
+        }
+    }
     compileSdkVersion 24
     buildToolsVersion '25.0.0'
     defaultConfig {
@@ -22,7 +30,6 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
-
 }
 
 dependencies {
@@ -34,6 +41,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile files('libs/AMap_Search_V3.6.0_20161111.jar')
     compile files('libs/Android_Map3D_SDK_V4.1.2_20161104.jar')
-    compile files('libs/AMap_Location_V3.1.0_20161027.jar')
     compile files('libs/AMap_Location_V3.4.0_20170427.jar')
 }
