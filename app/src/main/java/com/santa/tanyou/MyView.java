@@ -33,7 +33,7 @@ public class MyView extends View {
 
         // 2.如果覆盖层是纯色
         Bitmap bm = createBitmapFromARGB(0xFF000000, SCREEN_W, SCREEN_H);
-        bm = setBitmapAlpha(bm, 100);  // 设置纯色图层的透明度
+        bm = setBitmapAlpha(bm, 150);  // 设置纯色图层的透明度
         setCoverBitmap(bm);
 
     }

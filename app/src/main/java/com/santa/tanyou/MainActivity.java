@@ -1,6 +1,8 @@
 package com.santa.tanyou;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,10 +23,17 @@ import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.Projection;
+import com.amap.api.maps.UiSettings;
 import com.amap.api.maps.model.LatLng;
+import com.amap.api.services.core.LatLonPoint;
 
 
 public class MainActivity extends Activity implements LocationSource, AMapLocationListener {
+    //生命周期管理
+    static public boolean fog_draw_pause_judge = true;
+    private LatLonPoint lp = new LatLonPoint(39.993743, 116.472995);// 116.472995,39.993743
+    private LatLng pos;
+
     private int i = 0;
     private MyView myView;
     private double x;
@@ -54,7 +63,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 myView = new MyView(MainActivity.this);
                 act_main.addView(myView);
                 i = 0;//初始化计数器
-                aMap.getUiSettings().setAllGesturesEnabled(false);//禁止所有手势操作
+                //aMap.getUiSettings().setAllGesturesEnabled(false);//禁止所有手势操作
             }
         });
         //获取地图控件引用
@@ -81,6 +90,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
     设置一些amap的属性
      */
     private void setUpMap() {
+        removeAMapLogo();
         aMap.getUiSettings().setRotateGesturesEnabled(false);//禁止地图旋转手势
         aMap.getUiSettings().setTiltGesturesEnabled(false);//禁止倾斜手势
         aMap.setLocationSource(this);// 设置定位监听
@@ -109,6 +119,7 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         super.onResume();
         //在activity执行onResume时执行mMapView.onResume ()，实现地图生命周期管理
         mapView.onResume();
+        fog_draw_pause_judge = true;
     }
 
     @Override
@@ -116,6 +127,12 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
         super.onPause();
         //在activity执行onPause时执行mMapView.onPause ()，实现地图生命周期管理
         mapView.onPause();
+        fog_draw_pause_judge = false;
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
     }
 
     /*
@@ -123,26 +140,32 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
      */
     @Override
     public void onLocationChanged(final AMapLocation amapLocation) {
-        if (mListener != null && amapLocation != null) {
-            if (amapLocation != null && amapLocation.getErrorCode() == 0) {
-                mLocationErrText.setVisibility(View.GONE);
-                mListener.onLocationChanged(amapLocation);// 显示系统小蓝点
-                x = amapLocation.getLatitude();//获取纬度
-                y = amapLocation.getLongitude();//获取经度
-                LatLng pos = new LatLng(x,y);
-                Projection projection = aMap.getProjection();
-                //将地图的点，转换为屏幕上的点 
-                Point dot = projection.toScreenLocation(pos);
-                dot_x = dot.x;
-                dot_y = dot.y;
-                if (i == 0){
-                    myView.start_pot(dot_x,dot_y);
-                } else{
+
+        mLocationErrText.setVisibility(View.GONE);
+        mListener.onLocationChanged(amapLocation);// 显示系统小蓝点
+
+        x = amapLocation.getLatitude();//获取纬度
+        y = amapLocation.getLongitude();//获取经度
+
+        lp.setLatitude(x);
+        lp.setLongitude(y);
+
+        if (amapLocation.getErrorCode() == 0) {
+            pos = new LatLng(x, y);
+            Projection projection = aMap.getProjection();
+            //将地图的点，转换为屏幕上的点
+            Point dot = projection.toScreenLocation(pos);
+            dot_x = dot.x;
+            dot_y = dot.y;
+            if (fog_draw_pause_judge) {
+                if (i == 0) {
+                    myView.start_pot(dot_x, dot_y);
+                } else {
                     myView.line(dot_x, dot_y);
                 }
                 i++;
+                //Toast为调试用，检测后台Paint渲染坐标情况
                 Toast.makeText(MainActivity.this, "dot_x:" + dot_x + ", dot_y:" + dot_y, Toast.LENGTH_SHORT).show();
-
                 //amapLocation.getLocationType();//获取当前定位结果来源，如网络定位结果，详见定位类型表
                 //amapLocation.getLatitude();//获取纬度
                 //amapLocation.getLongitude();//获取经度
@@ -158,39 +181,14 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
                 //amapLocation.getAdCode();//地区编码
                 //amapLocation.getAoiName();//获取当前定位点的AOI信息
                 //amapLocation.getGpsStatus();//获取GPS的当前状态
-
-            } else {
-                String errText = "定位失败," + amapLocation.getErrorCode() + ": " + amapLocation.getErrorInfo();
-                Log.e("AmapErr", errText);
-                mLocationErrText.setVisibility(View.VISIBLE);
-                mLocationErrText.setText(errText);
             }
+        } else {
+            String errText = "定位失败," + amapLocation.getErrorCode() + ": " + amapLocation.getErrorInfo();
+            Log.e("AmapErr", errText);
+            mLocationErrText.setVisibility(View.VISIBLE);
+            mLocationErrText.setText(errText);
         }
     }
-
-    /*private void adjustCamera(LatLng centerLatLng,int range){
-        //当前缩放级别下的比例尺 
-        //"每像素代表" + scale + "米"
-        float scale = aMap.getScalePerPixel();
-        //代表range（米）的像素数量 
-        int pixel = Math.round(range/scale);
-        //小范围，小缩放级别（比例尺较大），有精度损失 
-        Projection projection = aMap.getProjection();
-        //将地图的中心点，转换为屏幕上的点 
-        Point center = projection.toScreenLocation(centerLatLng);
-        //获取距离中心点为pixel像素的左、右两点（屏幕上的点 
-        Point right = new Point(center.x+pixel,center.y);
-        Point left = new Point(center.x-pixel,center.y);
-
-        //将屏幕上的点转换为地图上的点 
-        LatLng rightLatlng=projection.fromScreenLocation(right);
-        LatLng LeftLatlng = projection.fromScreenLocation(left);
-
-        LatLngBounds bounds = LatLngBounds.builder().include(rightLatlng).include(LeftLatlng).build();
-        //bounds.contains();
-
-        aMap.getMapScreenMarkers();
-    }*/
 
     /*
     激活定位
@@ -213,6 +211,11 @@ public class MainActivity extends Activity implements LocationSource, AMapLocati
             // 在单次定位情况下，定位无论成功与否，都无需调用stopLocation()方法移除请求，定位sdk内部会移除
             mlocationClient.startLocation();
         }
+    }
+    private void removeAMapLogo() {
+
+        UiSettings uiSettings =  aMap.getUiSettings();
+        uiSettings.setLogoBottomMargin(-50);
     }
 
     /*
